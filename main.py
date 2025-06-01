@@ -1,6 +1,8 @@
 import boto3
 import time
 import logging
+import json
+import parse
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
@@ -19,7 +21,19 @@ def poll_messages():
 
         logger.warning(f'Received message: {resp}')
 
-        time.sleep(1)
+        messages = resp.get('Messages', [])
+        if not messages:
+            continue
+
+        for message in messages:
+            body = json.loads(message['Body'])
+            file_key = body.get('FileKey')
+            if file_key is not None:
+                try:
+                    parse.parse(file_key)
+                except Exception as e:
+                    logger.error(f'parse {file_key} failed, error: {e}')
+
 
 if __name__ == '__main__':
     poll_messages()

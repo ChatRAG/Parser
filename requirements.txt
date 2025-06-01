@@ -1,1 +1,7 @@
 boto3
+requests
+python-docx
+PyPDF2
+openpyxl
+tiktoken
+cohere

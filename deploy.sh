@@ -7,6 +7,4 @@ docker tag chatrag/parser:latest 698446905433.dkr.ecr.ap-southeast-2.amazonaws.c
 
 docker push 698446905433.dkr.ecr.ap-southeast-2.amazonaws.com/chatrag/parser:latest
 
-echo "Open Amazon ECR to check out the newly published docker image."
-
-echo "Use this docker URI to create a new Amazon ECS task version, and run it on a cluster."
+#aws ecs register-task-definition --cli-input-json file://task-definition.json
