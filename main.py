@@ -28,9 +28,10 @@ def poll_messages():
         for message in messages:
             body = json.loads(message['Body'])
             file_key = body.get('FileKey')
-            if file_key is not None:
+            file_name = body.get('FileName')
+            if file_key is not None and file_name is not None:
                 try:
-                    parse.parse(file_key)
+                    parse.parse(file_key, file_name)
                 except Exception as e:
                     logger.error(f'parse {file_key} failed, error: {e}')
 

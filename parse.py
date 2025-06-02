@@ -8,14 +8,15 @@ import docx
 import PyPDF2
 import openpyxl
 import tiktoken
-import embed
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 lambda_client = boto3.client('lambda')
+MAX_WORKERS = 1
 
 
-def chunk_text(paragraphs, max_tokens=1024, model_name="gpt-3.5-turbo"):
+def chunk_text(paragraphs, max_tokens=4096, model_name="gpt-3.5-turbo"):
     """
     Join paragraphs into chunks, each no more than `max_tokens` tokens.
     """
@@ -112,14 +113,68 @@ def parse_file_content(file_name, file_bytes):
         raise Exception(f"Unsupported file type: {ext}")
 
 
-def parse(file_key):
-    logger.warning(f'parse {file_key}')
+def delete_chunks(file_key):
+    payload = json.dumps(
+        {
+            'file_key': file_key,
+        }
+    )
+
+    response = lambda_client.invoke(
+        FunctionName="ChatRAG-Search-DeleteChunk",
+        InvocationType='RequestResponse',
+        Payload=payload
+    )
+
+    response_payload = response['Payload'].read().decode('utf-8')
+    response = json.loads(response_payload)
+    if response['statusCode'] != 200:
+        raise Exception(f"Failed deleting {file_key}, {response}")
+    return f"Chunks with file_key {file_key} successfully updated"
+
+
+def add_chunk(file_key, offset, title, content):
+    payload = json.dumps(
+        {
+            'file_key': file_key,
+            'title': title,
+            'content': content,
+            'offset': offset,
+        }
+    )
+
+    response = lambda_client.invoke(
+        FunctionName="ChatRAG-Search-AddChunk",
+        InvocationType='RequestResponse',
+        Payload=payload
+    )
+
+    response_payload = response['Payload'].read().decode('utf-8')
+    response = json.loads(response_payload)
+    print(response)
+    if response['statusCode'] != 200:
+        raise Exception(f"Failed chunk {offset}: {response_payload}")
+    return f"Chunk {offset} successfully updated"
+
+
+def parse(file_key, file_name):
+    logger.warning(f'parse {file_key}, ')
     url = get_file_url(file_key)
     content = get_file_content(url)
-    paragraphs = parse_file_content(file_key, content)
+    paragraphs = parse_file_content(file_name, content)
     chunks = chunk_text(paragraphs)
 
-    for i, chunk in enumerate(chunks):
-        escaped_chunk = chunk.replace('\n', '\\n')
-        embedding = embed.embed_text(chunk)
-        logger.warning(f"chunk{i}: {escaped_chunk}, embedding={embedding}")
+    delete_chunks(file_key)
+    with ThreadPoolExecutor(max_workers=MAX_WORKERS) as executor:
+        futures = []
+        for i, chunk in enumerate(chunks):
+            escaped_chunk = chunk.replace('\n', '\\n')
+            logger.warning(f"chunk{i}: {escaped_chunk}")
+            futures.append(executor.submit(add_chunk, file_key, i, file_name, escaped_chunk))
+
+        for future in as_completed(futures):
+            try:
+                result = future.result()
+                logger.warning(result)
+            except Exception as e:
+                logger.error(f"Error updating chunk: {str(e)}")
