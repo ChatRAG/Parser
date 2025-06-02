@@ -16,7 +16,7 @@ lambda_client = boto3.client('lambda')
 MAX_WORKERS = 1
 
 
-def chunk_text(paragraphs, max_tokens=4096, model_name="gpt-3.5-turbo"):
+def chunk_text(paragraphs, max_tokens=1024, model_name="gpt-3.5-turbo"):
     """
     Join paragraphs into chunks, each no more than `max_tokens` tokens.
     """

@@ -19,11 +19,11 @@ def poll_messages():
             WaitTimeSeconds=20  # long polling
         )
 
-        logger.warning(f'Received message: {resp}')
-
         messages = resp.get('Messages', [])
         if not messages:
             continue
+
+        logger.warning(f'Received message: {resp}')
 
         for message in messages:
             body = json.loads(message['Body'])
