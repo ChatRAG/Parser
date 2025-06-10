@@ -6,7 +6,7 @@ import parse
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
-sqs = boto3.client('sqs')
+sqs = boto3.client('sqs', region_name='ap-southeast-2')
 queue_url = 'https://sqs.ap-southeast-2.amazonaws.com/698446905433/chatrag-parse-queue'
 
 

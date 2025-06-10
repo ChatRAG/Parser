@@ -12,7 +12,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
-lambda_client = boto3.client('lambda')
+lambda_client = boto3.client('lambda', region_name='ap-southeast-2')
 MAX_WORKERS = 1
 
 
