@@ -1,0 +1,29 @@
+# For testing generated docker on EC2 instance
+# Architecture of EC2 has to be compatible with your local machine
+
+# Update package repository
+sudo yum update -y
+
+# Install Docker
+sudo yum install -y docker
+
+# Start Docker
+sudo service docker start
+
+# Enable Docker to start on boot
+sudo systemctl enable docker
+
+# Install AWS CLI
+sudo yum install -y aws-cli
+
+# credentials
+aws configure
+
+# login
+aws ecr get-login-password --region ap-southeast-2 | sudo docker login --username AWS --password-stdin 698446905433.dkr.ecr.ap-southeast-2.amazonaws.com
+
+# Pull image
+sudo docker pull 698446905433.dkr.ecr.ap-southeast-2.amazonaws.com/chatrag/parser:latest
+
+# Run image
+sudo docker run -d -p 80:80 698446905433.dkr.ecr.ap-southeast-2.amazonaws.com/chatrag/parser:latest
